@@ -9,6 +9,7 @@ import ReactNative, {
   Dimensions,
   TextInput,
   ViewPropTypes,
+  Animated
 } from "react-native";
 
 import CreditCard from "./CardView";
@@ -66,7 +67,7 @@ export default class CreditCardInput extends Component {
 
     additionalInputsProps: PropTypes.objectOf(PropTypes.shape(TextInput.propTypes)),
   };
-
+  scrollX = new Animated.Value(0);
   static defaultProps = {
     cardViewSize: {},
     labels: {
@@ -96,7 +97,7 @@ export default class CreditCardInput extends Component {
 
   componentDidMount = () => this._focus(this.props.focused);
 
-  componentWillReceiveProps = newProps => {
+  UNSAFE_componentWillReceiveProps = newProps => {
     if (this.props.focused !== newProps.focused) this._focus(newProps.focused);
   };
 
@@ -146,7 +147,13 @@ export default class CreditCardInput extends Component {
       allowScroll, requiresName, requiresCVC, requiresPostalCode,
       cardScale, cardFontFamily, cardBrandIcons,
     } = this.props;
-
+    const data = [
+      {name:"number" },
+      {name: "expiry"},
+      {name:"cvc" },
+      {name: "name"},
+    ]
+    const ITEM_LENGTH = 300;
     return (
       <View style={s.container}>
         <CreditCard focused={focused}
@@ -168,22 +175,50 @@ export default class CreditCardInput extends Component {
           style={s.form}>
           <CCInput {...this._inputProps("number")}
             keyboardType="numeric"
-            containerStyle={[s.inputContainer, inputContainerStyle, { width: CARD_NUMBER_INPUT_WIDTH }]} />
+            containerStyle={[s.inputContainer, { width: CARD_NUMBER_INPUT_WIDTH }, inputContainerStyle]} />
           <CCInput {...this._inputProps("expiry")}
             keyboardType="numeric"
-            containerStyle={[s.inputContainer, inputContainerStyle, { width: EXPIRY_INPUT_WIDTH }]} />
+            containerStyle={[s.inputContainer, { width: EXPIRY_INPUT_WIDTH }, inputContainerStyle, ]} />
           { requiresCVC &&
             <CCInput {...this._inputProps("cvc")}
               keyboardType="numeric"
-              containerStyle={[s.inputContainer, inputContainerStyle, { width: CVC_INPUT_WIDTH }]} /> }
+              containerStyle={[s.inputContainer, { width: CVC_INPUT_WIDTH }, inputContainerStyle, ]} /> }
           { requiresName &&
             <CCInput {...this._inputProps("name")}
-              containerStyle={[s.inputContainer, inputContainerStyle, { width: NAME_INPUT_WIDTH }]} /> }
+              containerStyle={[s.inputContainer,  { width: NAME_INPUT_WIDTH }, inputContainerStyle,]} /> }
           { requiresPostalCode &&
             <CCInput {...this._inputProps("postalCode")}
               keyboardType="numeric"
-              containerStyle={[s.inputContainer, inputContainerStyle, { width: POSTAL_CODE_INPUT_WIDTH }]} /> }
+              containerStyle={[s.inputContainer,{ width: POSTAL_CODE_INPUT_WIDTH }, inputContainerStyle, ]} /> }
         </ScrollView>
+           <Animated.FlatList
+            data={data}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+              { useNativeDriver: true },
+            )}
+            renderItem={({item , index}) => {
+              const inputRange = [
+                (index - 1) * ITEM_LENGTH,
+                index * ITEM_LENGTH,
+                (index + 1) * ITEM_LENGTH,
+              ];
+              const opacity = this.scrollX.interpolate({
+                inputRange,
+                outputRange: [0, 1, 0],
+                extrapolate: "clamp",
+              });
+              return (
+                <Animated.View style={[{
+                  width: ITEM_LENGTH,
+                  opacity,
+                }]}>
+                   <CCInput {...this._inputProps(item.name)}
+                     containerStyle={[s.inputContainer, inputContainerStyle,]} />
+                </Animated.View>
+              )
+            }}
+           /> 
       </View>
     );
   }
