@@ -194,7 +194,7 @@ export default class CreditCardInput extends Component {
            <Animated.FlatList
             data={data}
             onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+              [{ nativeEvent: { contentOffset: { x: this.scrollX } } }],
               { useNativeDriver: true },
             )}
             renderItem={({item , index}) => {
