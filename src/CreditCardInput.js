@@ -9,7 +9,8 @@ import ReactNative, {
   Dimensions,
   TextInput,
   ViewPropTypes,
-  Animated
+  Animated,
+  Button
 } from "react-native";
 
 import CreditCard from "./CardView";
@@ -24,7 +25,8 @@ const s = StyleSheet.create({
     marginTop: 20,
   },
   inputContainer: {
-    marginLeft: 20,
+    // marginLeft: 20,
+
   },
   inputLabel: {
     fontWeight: "bold",
@@ -32,16 +34,27 @@ const s = StyleSheet.create({
   input: {
     height: 40,
   },
+  button: {
+    position: "absolute", width: undefined, right: 0, bottom:0
+  }
 });
 
 const CVC_INPUT_WIDTH = 70;
 const EXPIRY_INPUT_WIDTH = CVC_INPUT_WIDTH;
 const CARD_NUMBER_INPUT_WIDTH_OFFSET = 40;
-const CARD_NUMBER_INPUT_WIDTH = Dimensions.get("window").width - EXPIRY_INPUT_WIDTH - CARD_NUMBER_INPUT_WIDTH_OFFSET;
+const widthScreen = Dimensions.get("window").width;
+const CARD_NUMBER_INPUT_WIDTH = widthScreen - EXPIRY_INPUT_WIDTH - CARD_NUMBER_INPUT_WIDTH_OFFSET;
 const NAME_INPUT_WIDTH = CARD_NUMBER_INPUT_WIDTH;
 const PREVIOUS_FIELD_OFFSET = 40;
 const POSTAL_CODE_INPUT_WIDTH = 120;
+const ITEM_LENGTH = widthScreen;
 
+const data = [
+  {name:"number" },
+  {name: "name"},
+  {name: "expiry"},
+  {name:"cvc" },
+];
 /* eslint react/prop-types: 0 */ // https://github.com/yannickcr/eslint-plugin-react/issues/106
 export default class CreditCardInput extends Component {
   static propTypes = {
@@ -68,6 +81,10 @@ export default class CreditCardInput extends Component {
     additionalInputsProps: PropTypes.objectOf(PropTypes.shape(TextInput.propTypes)),
   };
   scrollX = new Animated.Value(0);
+  flatRef = React.createRef();
+  currentIndex = React.createRef();
+  inputRefs = {};
+  
   static defaultProps = {
     cardViewSize: {},
     labels: {
@@ -95,6 +112,11 @@ export default class CreditCardInput extends Component {
     additionalInputsProps: {},
   };
 
+  constructor(props){
+    super(props);
+    this.currentIndex.current = 0;
+  }
+
   componentDidMount = () => this._focus(this.props.focused);
 
   UNSAFE_componentWillReceiveProps = newProps => {
@@ -103,16 +125,16 @@ export default class CreditCardInput extends Component {
 
   _focus = field => {
     if (!field) return;
+    // console.log(field);
+    // const scrollResponder = this.refs.Form.getScrollResponder();
+    // const nodeHandle = ReactNative.findNodeHandle(this.refs[field]);
 
-    const scrollResponder = this.refs.Form.getScrollResponder();
-    const nodeHandle = ReactNative.findNodeHandle(this.refs[field]);
-
-    NativeModules.UIManager.measureLayoutRelativeToParent(nodeHandle,
-      e => { throw e; },
-      x => {
-        scrollResponder.scrollTo({ x: Math.max(x - PREVIOUS_FIELD_OFFSET, 0), animated: true });
-        this.refs[field].focus();
-      });
+    // NativeModules.UIManager.measureLayoutRelativeToParent(nodeHandle,
+    //   e => { throw e; },
+    //   x => {
+    //     scrollResponder.scrollTo({ x: Math.max(x - PREVIOUS_FIELD_OFFSET, 0), animated: true });
+    //     this.refs[field].focus();
+    //   });
   }
 
   _inputProps = field => {
@@ -140,20 +162,73 @@ export default class CreditCardInput extends Component {
     };
   };
 
+  handleOnNext = () => {
+    if (this.currentIndex.current === data.length - 1) {
+      return;
+    }
+    if (this.flatRef.current) {
+      this.flatRef.current.scrollToIndex({
+        animated: true,
+        index: this.currentIndex.current + 1,
+      });
+      this.currentIndex.current = this.currentIndex.current + 1
+      const field = data[this.currentIndex.current].name;
+      if(this.inputRefs[field]){
+        setTimeout(() => {
+          this.inputRefs[field]?.focus?.();
+        }, 400)
+      }
+    }
+  };
+
+  onMomentumScrollEnd = (event) => {
+    const x = event.nativeEvent.contentOffset.x;
+    let newIndex = Math.round(x / widthScreen);
+    if (newIndex > data.length) {
+      this.currentIndex.current = data.length - 1;
+      return
+    }
+    if (newIndex < 0) {
+      this.currentIndex.current = 0;
+      return
+    }
+    this.currentIndex.current = newIndex;
+    const field = data[newIndex].name;
+    if(this.inputRefs[field]){
+      this.inputRefs[field]?.focus?.();
+    }
+  }
+
+  nextButton = (props) => {
+    const ButtonTS = this.props.Button
+    if(ButtonTS) {
+      return <ButtonTS {...props} />
+    }
+    return <Button {...props}/>
+  }
+
+  lastButton = (props) => {
+    const ButtonTS = this.props.Button
+    if(ButtonTS) {
+      return <ButtonTS {...props} />
+    }
+    return <Button {...props}/>
+  }
+
+  handlePress = () => {
+    if(this.props.onPress){
+      this.props.onPress();
+    }
+  }
+
   render() {
     const {
       cardImageFront, cardImageBack, inputContainerStyle,
+      wrapperStyle,buttonStyle,
       values: { number, expiry, cvc, name, type }, focused,
       allowScroll, requiresName, requiresCVC, requiresPostalCode,
       cardScale, cardFontFamily, cardBrandIcons,
     } = this.props;
-    const data = [
-      {name:"number" },
-      {name: "expiry"},
-      {name:"cvc" },
-      {name: "name"},
-    ]
-    const ITEM_LENGTH = 300;
     return (
       <View style={s.container}>
         <CreditCard focused={focused}
@@ -167,54 +242,57 @@ export default class CreditCardInput extends Component {
           number={number}
           expiry={expiry}
           cvc={cvc} />
-        <ScrollView ref="Form"
-          horizontal
-          keyboardShouldPersistTaps="always"
-          scrollEnabled={allowScroll}
-          showsHorizontalScrollIndicator={false}
-          style={s.form}>
-          <CCInput {...this._inputProps("number")}
-            keyboardType="numeric"
-            containerStyle={[s.inputContainer, { width: CARD_NUMBER_INPUT_WIDTH }, inputContainerStyle]} />
-          <CCInput {...this._inputProps("expiry")}
-            keyboardType="numeric"
-            containerStyle={[s.inputContainer, { width: EXPIRY_INPUT_WIDTH }, inputContainerStyle, ]} />
-          { requiresCVC &&
-            <CCInput {...this._inputProps("cvc")}
-              keyboardType="numeric"
-              containerStyle={[s.inputContainer, { width: CVC_INPUT_WIDTH }, inputContainerStyle, ]} /> }
-          { requiresName &&
-            <CCInput {...this._inputProps("name")}
-              containerStyle={[s.inputContainer,  { width: NAME_INPUT_WIDTH }, inputContainerStyle,]} /> }
-          { requiresPostalCode &&
-            <CCInput {...this._inputProps("postalCode")}
-              keyboardType="numeric"
-              containerStyle={[s.inputContainer,{ width: POSTAL_CODE_INPUT_WIDTH }, inputContainerStyle, ]} /> }
-        </ScrollView>
            <Animated.FlatList
+             ref={this.flatRef}
             data={data}
+            horizontal={true}
+            onMomentumScrollEnd={this.onMomentumScrollEnd}
+            scrollEventThrottle={16}
+            scrollEnabled={allowScroll}
+            snapToInterval={ITEM_LENGTH}
+            decelerationRate={"fast"}
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled={true}
+            bounces={false}
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { x: this.scrollX } } }],
-              { useNativeDriver: true },
+              { useNativeDriver : true },
             )}
             renderItem={({item , index}) => {
+
               const inputRange = [
                 (index - 1) * ITEM_LENGTH,
                 index * ITEM_LENGTH,
                 (index + 1) * ITEM_LENGTH,
               ];
+
               const opacity = this.scrollX.interpolate({
                 inputRange,
                 outputRange: [0, 1, 0],
+                extrapolate: "clamp", 
+              });
+              const translateX = Animated.subtract(this.scrollX, index * ITEM_LENGTH).interpolate({
+                inputRange: [0,1],
+                outputRange: [0, -2],
                 extrapolate: "clamp",
               });
+              
               return (
                 <Animated.View style={[{
                   width: ITEM_LENGTH,
                   opacity,
+                  transform: [{translateX}]
                 }]}>
-                   <CCInput {...this._inputProps(item.name)}
-                     containerStyle={[s.inputContainer, inputContainerStyle,]} />
+                  <View style={[{flexDirection: "row", alignItems: "center"}, wrapperStyle]}>
+                    <CCInput {...this._inputProps(item.name)}
+                    ref={(ref) => this.inputRefs[item.name] = ref}
+                      containerStyle={[s.inputContainer, inputContainerStyle]} />
+                     {data.length - 1 !== index &&  <this.nextButton
+                        onPress={this.handleOnNext} title={this.props.textNextButton || "Next"} 
+                        style={[{ position: "absolute", width: undefined, right: 0, bottom:0}, buttonStyle]} 
+                      />}
+                      {data.length - 1 === index && this.props.children}
+                  </View>
                 </Animated.View>
               )
             }}

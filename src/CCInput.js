@@ -52,7 +52,7 @@ export default class CCInput extends Component {
     onBecomeValid: () => {},
     additionalInputProps: {},
   };
-
+  root = React.createRef();
   UNSAFE_componentWillReceiveProps = newProps => {
     const { status, value, onBecomeEmpty, onBecomeValid, field } = this.props;
     const { status: newStatus, value: newValue } = newProps;
@@ -61,7 +61,11 @@ export default class CCInput extends Component {
     if (status !== "valid" && newStatus === "valid") onBecomeValid(field);
   };
 
-  focus = () => this.refs.input.focus();
+  focus = () => {
+    if (this.root.current) {
+      this.root.current?.focus?.()
+    }
+  };
 
   _onFocus = () => this.props.onFocus(this.props.field);
   _onChange = value => this.props.onChange(this.props.field, value);
@@ -76,7 +80,7 @@ export default class CCInput extends Component {
         activeOpacity={0.99}>
         <View style={[containerStyle]}>
           { !!label && <Text style={[labelStyle]}>{label}</Text>}
-          <TextInput ref="input"
+          <TextInput ref={this.root}
             {...additionalInputProps}
             keyboardType={keyboardType}
             autoCapitalise="words"
