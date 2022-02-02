@@ -243,40 +243,41 @@ export default class CreditCardInput extends Component {
           expiry={expiry}
           cvc={cvc} />
            <Animated.FlatList
-             ref={this.flatRef}
-            data={data}
-            horizontal={true}
-            onMomentumScrollEnd={this.onMomentumScrollEnd}
-            scrollEventThrottle={16}
-            scrollEnabled={allowScroll}
-            snapToInterval={ITEM_LENGTH}
-            decelerationRate={"fast"}
-            showsHorizontalScrollIndicator={false}
-            pagingEnabled={true}
-            bounces={false}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { x: this.scrollX } } }],
-              { useNativeDriver : true },
-            )}
-            renderItem={({item , index}) => {
+              keyboardShouldPersistTaps={"always"}
+              ref={this.flatRef}
+              data={data}
+              horizontal={true}
+              onMomentumScrollEnd={this.onMomentumScrollEnd}
+              scrollEventThrottle={16}
+              scrollEnabled={allowScroll}
+              snapToInterval={ITEM_LENGTH}
+              decelerationRate={"fast"}
+              showsHorizontalScrollIndicator={false}
+              pagingEnabled={true}
+              bounces={false}
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { x: this.scrollX } } }],
+                { useNativeDriver : true },
+              )}
+              renderItem={({item , index}) => {
 
-              const inputRange = [
-                (index - 1) * ITEM_LENGTH,
-                index * ITEM_LENGTH,
-                (index + 1) * ITEM_LENGTH,
-              ];
+                const inputRange = [
+                  (index - 1) * ITEM_LENGTH,
+                  index * ITEM_LENGTH,
+                  (index + 1) * ITEM_LENGTH,
+                ];
 
-              const opacity = this.scrollX.interpolate({
-                inputRange,
-                outputRange: [0, 1, 0],
-                extrapolate: "clamp", 
-              });
-              const translateX = Animated.subtract(this.scrollX, index * ITEM_LENGTH).interpolate({
-                inputRange: [0,1],
-                outputRange: [0, -2],
-                extrapolate: "clamp",
-              });
-              
+                const opacity = this.scrollX.interpolate({
+                  inputRange,
+                  outputRange: [0, 1, 0],
+                  extrapolate: "clamp", 
+                });
+                const translateX = Animated.subtract(this.scrollX, index * ITEM_LENGTH).interpolate({
+                  inputRange: [0,1],
+                  outputRange: [0, -2],
+                  extrapolate: "clamp",
+                });
+                
               return (
                 <Animated.View style={[{
                   width: ITEM_LENGTH,
