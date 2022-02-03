@@ -44,9 +44,6 @@ const EXPIRY_INPUT_WIDTH = CVC_INPUT_WIDTH;
 const CARD_NUMBER_INPUT_WIDTH_OFFSET = 40;
 const widthScreen = Dimensions.get("window").width;
 const CARD_NUMBER_INPUT_WIDTH = widthScreen - EXPIRY_INPUT_WIDTH - CARD_NUMBER_INPUT_WIDTH_OFFSET;
-const NAME_INPUT_WIDTH = CARD_NUMBER_INPUT_WIDTH;
-const PREVIOUS_FIELD_OFFSET = 40;
-const POSTAL_CODE_INPUT_WIDTH = 120;
 const ITEM_LENGTH = widthScreen;
 
 const data = [
@@ -144,7 +141,6 @@ export default class CreditCardInput extends Component {
       onFocus, onChange, onBecomeEmpty, onBecomeValid,
       additionalInputsProps,
     } = this.props;
-
     return {
       inputStyle: [s.input, inputStyle],
       labelStyle: [s.inputLabel, labelStyle],
@@ -228,7 +224,9 @@ export default class CreditCardInput extends Component {
       values: { number, expiry, cvc, name, type }, focused,
       allowScroll, requiresName, requiresCVC, requiresPostalCode,
       cardScale, cardFontFamily, cardBrandIcons,
+      status
     } = this.props;
+   
     return (
       <View style={s.container}>
         <CreditCard focused={focused}
@@ -276,8 +274,7 @@ export default class CreditCardInput extends Component {
                   inputRange: [0,1],
                   outputRange: [0, -2],
                   extrapolate: "clamp",
-                });
-                
+                });  
               return (
                 <Animated.View style={[{
                   width: ITEM_LENGTH,
@@ -285,12 +282,14 @@ export default class CreditCardInput extends Component {
                   transform: [{translateX}]
                 }]}>
                   <View style={[{flexDirection: "row", alignItems: "center"}, wrapperStyle]}>
-                    <CCInput {...this._inputProps(item.name)}
+                    <CCInput {...this._inputProps(item.name)} 
                     ref={(ref) => this.inputRefs[item.name] = ref}
                       containerStyle={[s.inputContainer, inputContainerStyle]} />
                      {data.length - 1 !== index &&  <this.nextButton
+                         activeOpacity={0.7}
                         onPress={this.handleOnNext} title={this.props.textNextButton || "Next"} 
-                        style={[{ position: "absolute", width: undefined, right: 0, bottom:0}, buttonStyle]} 
+                        disabled={status[item.name] !== "valid"}
+                        style={[buttonStyle]} 
                       />}
                       {data.length - 1 === index && this.props.children}
                   </View>

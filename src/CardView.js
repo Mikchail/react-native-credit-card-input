@@ -7,15 +7,23 @@ import {
   Text,
   StyleSheet,
   Platform,
+  Dimensions,
 } from "react-native";
 
 import defaultIcons from "./Icons";
 import FlipCard from "react-native-flip-card";
 
-const BASE_SIZE = { width: 300, height: 190 };
+
+const widthScreen = Dimensions.get("window").width;
+const widthCard = widthScreen > 400 ? 400 : widthScreen;
+
+const BASE_SIZE = { width: widthCard - 32, height: 204 };
 
 const s = StyleSheet.create({
-  cardContainer: {},
+  cardContainer: {
+    borderRadius: 15,
+    overflow: "hidden"
+  },
   cardFace: {},
   icon: {
     position: "absolute",
@@ -109,6 +117,14 @@ export default class CardView extends Component {
     imageBack: require("../images/card-back.png"),
   };
 
+  getCardNumber = () => {
+    const { number, placeholder } = this.props;
+    if(number?.length < placeholder.number.length){
+      return number + placeholder.number.slice(number.length)
+    }
+    return  !number ? placeholder.number : number 
+  }
+
   render() {
     const { focused,
       brand, name, number, expiry, cvc, customIcons,
@@ -138,7 +154,7 @@ export default class CardView extends Component {
               <Image style={[s.icon]}
                 source={Icons[brand]} />
               <Text style={[s.baseText, { fontFamily }, s.number, !number && s.placeholder, focused === "number" && s.focused]}>
-                { !number ? placeholder.number : number }
+                {this.getCardNumber()}
               </Text>
               <Text style={[s.baseText, { fontFamily }, s.name, !name && s.placeholder, focused === "name" && s.focused]}
                 numberOfLines={1}>
